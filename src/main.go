@@ -33,7 +33,10 @@ var (
 func route() {
 	// Public handlers: add your own
 	http.Handle("/", http.FileServer(http.Dir(Config.DocumentRoot)))
-	http.HandleFunc("/api/scheduler/", SchedulerHandler)
+	http.HandleFunc("/api/v1/create/", TaskCreateHandler)
+	http.HandleFunc("/api/v1/list/", TaskListHandler)
+	http.HandleFunc("/api/v1/status/", TaskStatusHandler)
+	http.HandleFunc("/api/v1/delete/", TaskDeleteHandler)
 }
 
 func hello() {
