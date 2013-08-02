@@ -22,6 +22,12 @@ create table Crontab (
   Errors integer default 0,
   Success integer default 0,
   IsActive boolean not null,
+  SrcURL    varchar(1024),
+  DstURL    varchar(1024),
+  SrcMethod varchar(16),
+  DstMethod varchar(16),
+  SrcBody   varchar(512),
+  Policy    varchar(16),
   primary key(id)
 );
 
