@@ -18,7 +18,6 @@ type User struct {
 	IsActive bool
 }
 
-
 func NewUser(email, passwd, fullname string, active bool) (*User, error) {
 	if _, err := MySQL.Exec(`
 		insert into User (Email, Passwd, FullName, IsActive)
@@ -120,25 +119,41 @@ func UpdateUser(u *User) error {
 	return nil
 }
 
+// Tasks
+
+type TaskSrc struct {
+	URL    string
+	Method string
+	Body   string
+	Policy string
+}
+
+type TaskDst struct {
+	URL    string
+	Policy string
+}
+
 // Crontab scheduling
-type Crontab struct {
-    Id                  int
-    UserId              int
-    CrontabString       string
-    DateCreation        sql.Timestamp
-    DateLastModified    sql.Timestamp
-    DateLastExecution   sql.Timestamp
-    Errors              int
-    Success             int
-    IsActive            bool
+type Task struct {
+	Id                int
+	UserId            int
+	TaskId            int
+	CrontabString     string
+	DateCreation      sql.Timestamp
+	DateLastModified  sql.Timestamp
+	DateLastExecution sql.Timestamp
+	Errors            int
+	Success           int
+	IsActive          bool
+	Src               TaskSrc
+	Dst               TaskDst
 }
 
 // Model
-func NewCrontab(CrontabString string) (id, error){}
-func FindCrontabById(Id int) (*Crontab, error){}
-func (c Crontab) ActivateCrontab(Id string)(bool, error){}
-func (c Crontab) DeactivateCrontab(Id string)(bool, error){}
-func (c Crontab) GetErrors(Id string)(int, error){}
-func (c Crontab) GetSuccess(Id string)(int, error){}
-func (c Crontab) GetDateLastExecution(Id string)(sql.Timestamp, error){}
-
+func NewTask(CrontabString string, taskSrc TaskSrc, taskDst TaskDst) (id, error) {}
+func FindTaskById(Id int) (*Task, error)                                         {}
+func (t Task) ActivateTask(Id string) (bool, error)                              {}
+func (t Task) DeactivateTask(Id string) (bool, error)                            {}
+func (t Task) GetErrors(Id string) (int, error)                                  {}
+func (t Task) GetSuccess(Id string) (int, error)                                 {}
+func (t Task) GetDateLastExecution(Id string) (sql.Timestamp, error)             {}

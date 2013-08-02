@@ -10,47 +10,6 @@ import (
 	"regexp"
 )
 
-var crontab_id = regexp.MustCompile(`^/([0-9]+)$`)
-
-func SchedulerHandler(w http.ResponseWriter, r *http.Request) {
-	bar, _ := Redis.Get("foo") // redis-cli set foo bar
-	fmt.Fprintln(w, "Hello, world", bar)
-
-	action := r.URL.Path[len("/api/scheduler/"):]
-	fmt.Fprintln(w, "action: ", action)
-	switch {
-	case action == "new":
-		fmt.Fprintln(w, "new")
-	case action == "remove":
-		fmt.Fprintln(w, "remove")
-	case action == "list":
-		fmt.Fprintln(w, "list")
-	case crontab_id.MatchString(action):
-		fmt.Fprintln(w, "id: %s", action)
-	default:
-		fmt.Fprintln(w, "index")
-	}
-
-}
-
-type Task struct {
-	Cron string
-	Src  TaskSrc
-	Dst  TaskDst
-}
-
-type TaskSrc struct {
-	URL    string
-	Method string
-	Body   string
-	Policy string
-}
-
-type TaskDst struct {
-	URL    string
-	Policy string
-}
-
 /* TaskCreateHandler creates new tasks. It accepts the following arguments:
 - cron:		Cron string to schedule the task
 - src[url]:	URL that's hit when cron executes
@@ -101,6 +60,8 @@ func TaskStatusHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(405), 405)
 		return
 	}
+	taskID := r.URL.Path[len("/api/v1/status/"):]
+	fmt.Fprintln(w, "task id:", taskID)
 }
 
 func TaskDeleteHandler(w http.ResponseWriter, r *http.Request) {
