@@ -137,7 +137,6 @@ type TaskDst struct {
 type Task struct {
 	Id                int
 	UserId            int
-	TaskId            int
 	CrontabString     string
 	DateCreation      sql.Timestamp
 	DateLastModified  sql.Timestamp
@@ -151,9 +150,65 @@ type Task struct {
 
 // Model
 func NewTask(CrontabString string, taskSrc TaskSrc, taskDst TaskDst) (id, error) {}
-func FindTaskById(Id int) (*Task, error)                                         {}
-func (t Task) ActivateTask(Id string) (bool, error)                              {}
-func (t Task) DeactivateTask(Id string) (bool, error)                            {}
-func (t Task) GetErrors(Id string) (int, error)                                  {}
-func (t Task) GetSuccess(Id string) (int, error)                                 {}
-func (t Task) GetDateLastExecution(Id string) (sql.Timestamp, error)             {}
+
+func FindTaskById(Id int) (*Task, error) {
+	var t Task
+	if err := MySQL.QueryRow(
+		"select * from Task where Id=?", Id,
+	).Scan(
+		&t.Id,
+		&t.UserId,
+		&t.CrontabString,
+		&t.DateCreation,
+		&t.DateLastModified,
+        &t.DateLastExecution,
+        &t.Errors,
+        &t.Success,
+        &t.IsActive,
+        &t.Src,
+        &t.Dst
+	); err != nil {
+		return nil, err
+	}
+	return &t, nil
+}
+
+func (t Task) ActivateTask(Id string) (error) {
+	if _, err := MySQL.Exec(
+		"update Crontab set IsActive=True where Id=?",
+		t.Id,
+	); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t Task) DeactivateTask(Id string) (error) {
+	if _, err := MySQL.Exec(
+		"update Crontab set IsActive=False where Id=?",
+		t.Id,
+	); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (t Task) GetErrors(Id string) (int, error) {
+	var error_count int
+	if err := MySQL.QueryRow(
+		"select Errors from Crontab where Id=?", Id,
+	).Scan(
+		&error_count,
+	); err != nil {
+		return -1, err
+	}
+	return error_count, nil
+}
+
+func (t Task) GetSuccess(Id string) (int, error) {
+
+}
+
+func (t Task) GetDateLastExecution(Id string) (sql.Timestamp, error) {
+
+}
