@@ -12,7 +12,7 @@ import (
 )
 
 /* TaskCreateHandler creates new tasks. It accepts the following arguments:
-- cron:		Cron string to schedule the task
+- cron:		Cron string to schedule the task [required]
 - src[url]:	URL that's hit when cron executes [required]
 - src[method]:	HTTP method used for accessing the source URL [default: GET]
 - src[body]:	Optional POST payload for the source URL [default: empty]
@@ -31,7 +31,6 @@ func TaskCreateHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(405), 405)
 		return
 	}
-	var errmsg string
 	cron := r.FormValue("cron")
 	tsrc := TaskSrc{
 		URL:    r.FormValue("src[url]"),
@@ -43,15 +42,20 @@ func TaskCreateHandler(w http.ResponseWriter, r *http.Request) {
 		URL:    r.FormValue("dst[url]"),
 		Policy: FormValueDefault(r, "dst[policy]", "once"),
 	}
+	var errmsg string
 	switch {
 	case cron == "":
-		errmsg = "Missing crontabstring"
+		errmsg = "Missing cron"
 	case tsrc.URL == "":
 		errmsg = "Missing src[url]"
 	case !ValidMethod(tsrc.Method):
 		errmsg = "Invalid src[method]"
 	case !ValidPolicy(tsrc.Policy):
 		errmsg = "Invalid src[policy]"
+	case tsrc.Method == "GET" && tsrc.Body != "":
+		errmsg = "Invalid src[method]=GET with non-empty src[body]"
+	case tsrc.Method == "POST" && tsrc.Body == "":
+		errmsg = "Invalid src[method]=POST with empty src[body]"
 	case tdst.URL == "":
 		errmsg = "Missing dst[url]"
 	case !ValidPolicy(tdst.Policy):
@@ -63,6 +67,7 @@ func TaskCreateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	t, _ := NewTask(cron, tsrc, tdst)
 	fmt.Println(t)
+	fmt.Fprintf(w, "OK\r\n")
 }
 
 func ValidMethod(s string) bool {

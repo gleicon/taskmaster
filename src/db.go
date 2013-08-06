@@ -9,8 +9,6 @@ import (
 	"time"
 )
 
-// Tasks
-
 type TaskSrc struct {
 	URL    string
 	Method string
