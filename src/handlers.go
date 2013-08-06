@@ -7,53 +7,97 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 )
 
 /* TaskCreateHandler creates new tasks. It accepts the following arguments:
 - cron:		Cron string to schedule the task
-- src[url]:	URL that's hit when cron executes [default: empty - task GET dstUrl w/o any payload]
+- src[url]:	URL that's hit when cron executes [required]
 - src[method]:	HTTP method used for accessing the source URL [default: GET]
 - src[body]:	Optional POST payload for the source URL [default: empty]
 - src[policy]:	Policy for accessing the source URL [default: once]
-- dst[url]:	URL that'll receive the task response
-- dst[policy]:	Policy for accessing the destination URL
+- dst[url]:	URL that'll receive the task response [required]
+- dst[policy]:	Policy for accessing the destination URL [default: once]
 
 Supported policies are:
 - once:		Try once and give up if it fails [default]
 - persist:	Retry for ever until it works
 - retry,N:	Use N as the number of times to retry before giving up
 */
-
 func TaskCreateHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		w.Header().Set("Allow", "POST")
 		http.Error(w, http.StatusText(405), 405)
 		return
 	}
-
-    crontabstring := r.FormValue("crontabstring")
-    dstURL := r.FormValue("dst[url]")
-
-    if crontabstring == "" || dstURL == "" {
-        http.Error(w, "Bad request: empty crontabstring or dst[url]", 400)
+	var errmsg string
+	cron := r.FormValue("cron")
+	tsrc := TaskSrc{
+		URL:    r.FormValue("src[url]"),
+		Method: FormValueDefault(r, "src[method]", "GET"),
+		Body:   r.FormValue("src[body]"),
+		Policy: FormValueDefault(r, "src[policy]", "once"),
+	}
+	tdst := TaskDst{
+		URL:    r.FormValue("dst[url]"),
+		Policy: FormValueDefault(r, "dst[policy]", "once"),
+	}
+	switch {
+	case cron == "":
+		errmsg = "Missing crontabstring"
+	case tsrc.URL == "":
+		errmsg = "Missing src[url]"
+	case !ValidMethod(tsrc.Method):
+		errmsg = "Invalid src[method]"
+	case !ValidPolicy(tsrc.Policy):
+		errmsg = "Invalid src[policy]"
+	case tdst.URL == "":
+		errmsg = "Missing dst[url]"
+	case !ValidPolicy(tdst.Policy):
+		errmsg = "Invalid dst[policy]"
+	}
+	if errmsg != "" {
+		http.Error(w, errmsg, 400)
 		return
-    }
-    // TODO: check formvalues for nil or empty
-
-    tS := TaskSrc {
-			URL:    r.FormValue("src[url]"),
-			Method: r.FormValue("src[method]"),
-			Body:   r.FormValue("src[body]"),
-			Policy: r.FormValue("src[policy]"),
-    }
-
-    tD := TaskDst{
-			URL:    dstURL,
-			Policy: r.FormValue("dst[policy]"),
-    }
-
-    id, t := NewTask(crontabstring, tS, tD)
+	}
+	t, _ := NewTask(cron, tsrc, tdst)
 	fmt.Println(t)
+}
+
+func ValidMethod(s string) bool {
+	switch s {
+	case "DELETE":
+	case "GET":
+	case "POST":
+	case "PUT":
+	default:
+		return false
+	}
+	return true
+}
+
+func ValidPolicy(s string) bool {
+	tmp := strings.SplitN(s, ",", 1)
+	switch tmp[0] {
+	case "once":
+	case "persist":
+	case "retry":
+		if n, err := strconv.Atoi(tmp[1]); err != nil || n < 0 {
+			return false
+		}
+	default:
+		return false
+	}
+	return true
+}
+
+func FormValueDefault(r *http.Request, k, d string) string {
+	if s := r.FormValue(k); s != "" {
+		return s
+	} else {
+		return d
+	}
 }
 
 func TaskListHandler(w http.ResponseWriter, r *http.Request) {
