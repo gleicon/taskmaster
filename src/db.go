@@ -6,6 +6,7 @@ package main
 
 import (
 	//	"database/sql"
+	"encoding/json"
 	"time"
 )
 
@@ -36,12 +37,22 @@ type Task struct {
 	Dst               TaskDst
 }
 
+func (t Task) String() (s string) {
+	b, err := json.Marshal(t)
+	if err != nil {
+		s = ""
+		return
+	}
+	s = string(b)
+	return
+}
+
 // Model
 func NewTask(CrontabString string, taskSrc TaskSrc, taskDst TaskDst) (*Task, error) {
 	return nil, nil
 }
 
-func FindTaskById(Id int) (*Task, error) {
+func FindTaskById(Id string) (*Task, error) {
 	var t Task
 	if err := MySQL.QueryRow(
 		"select * from Task where Id=?", Id,

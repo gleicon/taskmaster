@@ -126,6 +126,12 @@ func TaskStatusHandler(w http.ResponseWriter, r *http.Request) {
 	if taskID != "" {
 		fmt.Fprintln(w, "task id:", taskID)
 	}
+	t, err := FindTaskById(taskID)
+	if err != nil {
+		http.Error(w, "task not found", 404)
+		return
+	}
+	fmt.Fprintln(w, t)
 }
 
 func TaskDeleteHandler(w http.ResponseWriter, r *http.Request) {
