@@ -109,19 +109,16 @@ func FormValueDefault(r *http.Request, k, d string) string {
 }
 
 func TaskListHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
-		w.Header().Set("Allow", "GET")
-		http.Error(w, http.StatusText(405), 405)
+	if checkValidHTTPMethods([]string{"GET"}, w, r) == false {
 		return
 	}
 }
 
 func TaskStatusHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
-		w.Header().Set("Allow", "GET")
-		http.Error(w, http.StatusText(405), 405)
+	if checkValidHTTPMethods([]string{"GET"}, w, r) == false {
 		return
 	}
+
 	taskID := getTaskIdFromURI(r.URL.Path)
 	if taskID != "" {
 		fmt.Fprintln(w, "task id:", taskID)
@@ -135,11 +132,10 @@ func TaskStatusHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func TaskDeleteHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "DELETE" {
-		w.Header().Set("Allow", "DELETE")
-		http.Error(w, http.StatusText(405), 405)
+	if checkValidHTTPMethods([]string{"DELETE"}, w, r) == false {
 		return
 	}
+
 	taskID := getTaskIdFromURI(r.URL.Path)
 	if taskID != "" {
 		fmt.Fprintln(w, "task id:", taskID)
@@ -152,4 +148,15 @@ func getTaskIdFromURI(uri string) string {
 		return taskID
 	}
 	return ""
+}
+
+func checkValidHTTPMethods(allowed []string, w http.ResponseWriter, r *http.Request) bool {
+	for _, t := range allowed {
+		if t == r.Method {
+			return true
+		}
+	}
+	w.Header().Set("Allow", strings.Join(allowed, ", "))
+	http.Error(w, http.StatusText(405), 405)
+	return false
 }
