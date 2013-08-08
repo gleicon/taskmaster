@@ -7,9 +7,12 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 )
+
+var crontab_id = regexp.MustCompile(`^/([0-9]+)$`)
 
 /* TaskCreateHandler creates new tasks. It accepts the following arguments:
 - cron:		Cron string to schedule the task [required]
@@ -119,8 +122,10 @@ func TaskStatusHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(405), 405)
 		return
 	}
-	taskID := r.URL.Path[len("/api/v1/status/"):]
-	fmt.Fprintln(w, "task id:", taskID)
+	taskID := getTaskIdFromURI(r.URL.Path)
+	if taskID != "" {
+		fmt.Fprintln(w, "task id:", taskID)
+	}
 }
 
 func TaskDeleteHandler(w http.ResponseWriter, r *http.Request) {
@@ -129,4 +134,16 @@ func TaskDeleteHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(405), 405)
 		return
 	}
+	taskID := getTaskIdFromURI(r.URL.Path)
+	if taskID != "" {
+		fmt.Fprintln(w, "task id:", taskID)
+	}
+}
+
+func getTaskIdFromURI(uri string) string {
+	taskID := uri[len("/api/v1/status/"):]
+	if crontab_id.MatchString(taskID) {
+		return taskID
+	}
+	return ""
 }
